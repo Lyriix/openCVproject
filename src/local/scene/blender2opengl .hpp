@@ -26,6 +26,7 @@ public:
     /** extraction des données du fichier mtl*/
     void extractMTLdata(const std::string& fp);
 
+    /** Remplir une Map (clé : nom texture ; valeur : structure) */
 
     int  get_vertex() const;
     int& set_vertex();
@@ -47,6 +48,7 @@ public:
     std::vector<std::vector<int>> faces_tab_vertex;//indice des polygones de vertex
     std::vector<std::vector<int>> faces_tab_texel;  //indice des polygones de texte
     std::vector<std::string> list_mat_tex;
+
 private:
 
 

@@ -125,7 +125,6 @@ int Model::getMTLinfo(const string &fp)
     in.close(); //Close tje mtl file
     return m;
 }
-
 void Model::extractMTLdata(const string &fp)
 {
     //Compteurs
@@ -170,6 +169,7 @@ void Model::extractMTLdata(const string &fp)
     //Close MTL
     in.close();
 }
+
 
 
 
