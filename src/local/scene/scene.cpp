@@ -56,10 +56,10 @@ void scene::load_scene()
     //*****************************************//
     // AVATAR                                  //
     //*****************************************//
-    //texture_avatar = load_texture_file("data/Megaman/texture.png");
+    texture_avatar = load_texture_file("data/Megaman/texture.png");
     //tex_head = load_texture_file("data/Megaman/head.png");
 
-    mesh_avatar = load_mesh_file("data/Megaman/Megaman.obj");
+    mesh_avatar = load_mesh_file("data/Megaman/Megaman_Retex.obj");
     mesh_avatar.transform_apply_scale(0.2f,0.2f,0.2f);
     mesh_avatar_opengl.fill_vbo(mesh_avatar);
     //model();
@@ -95,7 +95,7 @@ void scene::load_scene()
 void scene::load_avatar()
 {
     //Model* model = new Model();
-    model* mod = new model();
+    Model* mod = new Model();
     // Files
     std::string srcData = "data/Megaman/";
     std::string nameOBJ = "Megaman";
@@ -103,62 +103,31 @@ void scene::load_avatar()
     std::string filepathMTL = srcData + nameOBJ +".mtl";
     std::string filepathH = srcData + nameOBJ +".h";
     std::string filepathC = srcData + nameOBJ +".c";
+    //string* materials = new string[14];
+    //std::vector<std::string> materials;
 
     //Model Info
-    mod->getObjInfo(filepathOBJ);
-    mod->setMaterials(filepathMTL);
+    mod->set_nbMaterials() = mod->getMTLinfo(filepathMTL);
+    mod->getOBJinfo(filepathOBJ);
+
     //Model data
-    float positions[mod->getPositions()][3];
-    float texels[mod->getTexels()][2];
-    int faces[mod->getFaces()][6];
-    string* materials = new string[mod->getMaterials()];
+  //  mod->extractMTLdata(filepathMTL);
+    mod->extractOBJdata(filepathOBJ, mod->get_nbMaterials());
+    std::vector<std::string>::iterator it_begin = mod->list_mat_tex.begin(), it_end = mod->list_mat_tex.end();
+    for( ;
+        it_begin != it_end;
+        it_begin++)
+    {
+        std::string aa = *it_begin;
+        std::cout<<aa<<std::endl;
+    }
 
-    float diffuses[mod->getMaterials()][3];
-    float speculars[mod->getMaterials()][3];
 
-    int firsts[mod->getMaterials()];
-    int counts[mod->getMaterials()];
+    //   std::vector<cpe::mesh> meshes_avatar;
+    // std::vector<cpe::mesh_opengl> meshes_avatar_opengl;
 
-    mod->extractMtlData(filepathMTL, materials, diffuses, speculars);
-    mod->extractObjData(filepathOBJ, positions, texels, faces, materials, mod->getMaterials());
-    mod->writeH(filepathH,nameOBJ);
-    mod->writeCvertices(filepathC,nameOBJ);
-    mod->writeCpositions(filepathC,nameOBJ,faces,positions,counts);
-    mod->writeCtexels(filepathC,nameOBJ,faces,texels);
-/*
+    std::cout<<mod->get_vertex()<<" "<<mod->get_texture_coord()<<" "<<mod->get_normals()<<" "<<mod->get_faces()<<" "<<mod->get_vertices()<<std::endl;
 
-    //Model Info
-    model->getOBJinfo(filepathOBJ);
-    std::cout<<model->getPositions()<<std::endl;
-    model->setMaterials(filepathMTL);
-
-    // Model Data
-    float positions[model->getPositions()][3];
-    float texels[model->getTexels()][2];
-    float normals[model->getNormals()][3];
-    int faces[model->getFaces()][6];
-    string* materials = new string[model->getMaterials()];
-    float diffuses[model->getMaterials()][3];
-    float speculars[model->getMaterials()][3];
-    model->extractMTLdata(filepathMTL, materials, diffuses, speculars);
-    model->extractOBJdata(filepathOBJ, positions, texels, normals, faces, materials, model->getMaterials());
-
-    int firsts[model->getMaterials()];
-    int counts[model->getMaterials()];
-
-    //Write H fille
-    model->writeH(filepathH, nameOBJ);
-    std::cout<<"tata"<<std::endl;
-    std::cout<<model->getPositions()<<" "<<model->getMaterials()<<std::endl;
-    //Write C File
-    model->writeCvertices(filepathC, nameOBJ);
-    model->writeCpositions(filepathC, nameOBJ,  faces, positions, counts);
-    model->writeCtexels(filepathC, nameOBJ, faces, texels);
-    model->writeCnormals(filepathC, nameOBJ, faces,normals);
-    model->writeCmaterials(filepathC, nameOBJ,firsts, counts);
-    model->writeCdiffuses(filepathC, nameOBJ, diffuses);
-    model->writeCspeculars(filepathC, nameOBJ, speculars);
-    */
 }
 // https://www.raywenderlich.com/48297/export-blender-models-opengl-es-part-2
 void scene::draw_scene()
@@ -178,14 +147,14 @@ void scene::draw_scene()
     analyse_image(frame);
     // Generate OpenGL texture from webcam image
     GLuint texture_webcam = generate_texture_webcam(frame);
- //Generate texture from ROI
+    //Generate texture from ROI
     GLuint texture_webcamROI = generate_texture_webcam(faceROI);//generate_avatar_head_texture(frame);
     // Draw the object with the webcam texture
     glBindTexture(GL_TEXTURE_2D,texture_webcam);  PRINT_OPENGL_ERROR();
     mesh_cube_opengl.draw();
     glBindTexture(GL_TEXTURE_2D,texture_webcamROI);
     mesh_head_opengl.draw();
-    //glBindTexture(GL_TEXTURE_2D,tex_head);
+    glBindTexture(GL_TEXTURE_2D,texture_avatar);
     mesh_avatar_opengl.draw();
     // Delete the texture on the GPU
     glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
@@ -267,7 +236,7 @@ void scene::load_common_data()
     shader_cube = read_shader("shaders/shader_cube.vert",
                               "shaders/shader_cube.frag"); PRINT_OPENGL_ERROR();
     haar_cascade.load("haarcascade_frontalface_alt.xml");
-   // cv::namedWindow("wind");
+    // cv::namedWindow("wind");
 }
 
 
@@ -291,13 +260,13 @@ void scene::analyse_image(cv::Mat& frame)
         //cv::ellipse(frame, center, cv::Size( faces[i].width*0.5, faces[i].height*0.5), 0, 0, 360, cv::Scalar( 255, 0, 255 ), 4, 8, 0);
         if(faces[i].x >0 && faces[i].x + faces[i].width < frame.cols && faces[i].y + faces[i].height < frame.rows)
         {
-             cv::rectangle(frame, cv::Point(faces[i].x, faces[i].y), cv::Point(faces[i].x +faces[i].width, faces[i].y + faces[i].height),CV_RGB(255,0,0),1,8,0);
-        //faceROI = frame(faces[i]);
-           faceROI=cv::Mat(frame,faces[i]);
-           cv::resize(faceROI,faceROI,cv::Size(100,100));
+            cv::rectangle(frame, cv::Point(faces[i].x, faces[i].y), cv::Point(faces[i].x +faces[i].width, faces[i].y + faces[i].height),CV_RGB(255,0,0),1,8,0);
+            //faceROI = frame(faces[i]);
+            faceROI=cv::Mat(frame,faces[i]);
+            cv::resize(faceROI,faceROI,cv::Size(100,100));
         }
     }
-// imshow("wind", faceROI);
+    // imshow("wind", faceROI);
 
 
 }

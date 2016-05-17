@@ -1,522 +1,286 @@
 
 #include "blender2opengl .hpp"
+#include "../../lib/common/error_handling.hpp"
 
 
-Model::Model(): vertices(0), positions(0), texels(0), normals(0), faces(0), materials(0)
+Model::Model():vertex(0),vertices(0),normals(0),color(0),texture_coord(0),faces(0)
 {}
 
-void Model::getOBJinfo(std::string fp)
+
+void Model::getOBJinfo(const std::string& fp)
 {
-    //   Model model =  Model();
 
-    //Open OBJ File
-    std::ifstream inOBJ;
-    inOBJ.open(fp);
-    if(!inOBJ.is_open())
-    {
-        std::cout<< "ERROR OPENNING OBJ FILE at 17" <<std::endl;
-        exit(1);
-    }
-    int i=0;
-    //Read OBJ File
-    std::string line;
-   while(std::getline(inOBJ, line))
-    while(! inOBJ.eof())
-    {
-       //  std::string line;
-        getline(inOBJ, line);
-        std::string type = line.substr(0,2);
 
-        if(type.compare("v ")==0)
+    //Open the OJ File
+    std::ifstream inOBJ(fp.c_str());
+    if(!inOBJ.good())
+        throw cpe::exception_cpe("Cannot open file" +fp,MACRO_EXCEPTION_PARAMETER);
+
+    std::string buffer;
+
+    //Lecture du fichier entier
+    while(inOBJ.good() == true)
+    {
+        //read line
+        std::getline(inOBJ,buffer);
+
+        if(buffer.size()>0) //si on est pas sur une ligne vide
         {
-            this->positions++;
-            // std::cout<<this->positions<<std::endl;
+            std::stringstream tokens_buffer(buffer); //IO string
+            std::string first_word; //premier mot du buffer dans le token
+            tokens_buffer>>first_word;
+
+            //vertices
+            if(first_word =="v")
+                vertex++;
+            //texture
+            if(first_word=="vt")
+                texture_coord++;
+            //normals
+            if(first_word=="vn")
+                normals++;
+            //faces; connectivity
+            if(first_word=="f")
+                faces++;
         }
-        if(type.compare("vt")==0)
-            this->texels++;
-        if(type.compare("vn") == 0)
-            this->normals++;
-        if(type.compare("f ") == 0)
-            this->faces++;
+        vertices = vertex *3;
     }
-    this->vertices = this->faces * 3;
-
-    //Close OBJ File
-    inOBJ.close();
-
-    //return model;
 }
-
-
-void Model::extractOBJdata(std::string fp, float positions[][3], float texels[][2] ,float normals[][3] ,int faces[][6] ,std::string* materials, int m)
+void Model::extractOBJdata(const std::string& fp, int m )
 {
-    //Counters
-    int p=0;
-    int t=0;
-    int n=0;
-    int f=0;
+    //Model model;
+    //Compteurs
+    int p=0,t=0,f=0;
     //Index
     int mtl=0;
 
-    //Open OBJ File
-    std::ifstream inOBJ;
-    inOBJ.open(fp);
-    if(! inOBJ.is_open())
-    {
-        std::cout<< "ERROR OPENING OBJ FILE at 60" << std::endl;
-        exit(1);
-    }
+    //Open the .obj
+    std::ifstream in(fp.c_str());
 
-    //Read OBJ File
-    //while(! inOBJ.eof())
-    std::string line;
-    while(std::getline(inOBJ, line))
+    if(!in.good())
+        throw cpe::exception_cpe("Cannot open file "+fp,MACRO_EXCEPTION_PARAMETER);
+
+    std::string buffer;
+
+    //lecture du fichier entier
+    while(in.good()==true)
     {
-        getline(inOBJ, line);
-        std::string type = line.substr(0,2);
-        //Material
-        if(type.compare("us") == 0)
+        //Lecture d'une ligne mise dans le buffer
+        std::getline(in,buffer);
+        if(buffer.size()>0) // si la ligne n'est pas vide
         {
-            //Extract Token
-            std::string l = "usemtl ";
-            std::string material = line.substr(l.size());
-            for( int i=0; i<m; i++)
+            std::stringstream tokens_buffer(buffer);
+            std::string first_word;
+            tokens_buffer>>first_word;
+            if(first_word.length()>0 && first_word[0] != '#')
             {
-                if(material.compare(materials[i]) == 0)
-                    mtl=i;
-            }
-        }
+                //vertices  //read vertex obj
+                if(first_word=="v"){ read_vertex_obj(tokens_buffer,*this); }
+                 //read texture obj
+                if(first_word=="vt"){}
+             //read normal obj
+                if(first_word=="vn"){}
+                //read material obj
+                if(first_word=="usemtl")
+                {
+                    std::string material = buffer.substr(first_word.size());
+                    read_name_mtl(tokens_buffer,*this);
+                    for(int i=0; i<m; i++)
+                        if(material.compare(this->list_mat_tex[i]) == 0)
+                            mtl=i;
+                }
 
-        //Positions
-        if(type.compare("v ") == 0) //sommet
-        {
-            //Copy line for parsing
-            char* l = new char[line.size() + 1];
-            memcpy(l,line.c_str(),line.size()+1);
+                if(first_word=="f"){read_face_obj(tokens_buffer,*this,mtl);}
+                //read connectivity/faces obj
 
-            //Extract Tokens
-            std::strtok(l, " ");
-            for(int i=0; i<3; i++)
-                positions[p][i] = std::atof(std::strtok(NULL, " "));
-
-            //Wrap Up
-            delete[] l;
-            p++;
-        }
-
-        //Texels
-        else if(type.compare("vt") == 0) //texture
-        {
-            char* l = new char[line.size()+1];
-            memcpy(l,line.c_str(),line.size()+1);
-
-            strtok(l, " ");
-            for (int i=0; i<2 ; i++)
-                normals[n][i] = atof(strtok(NULL, " "));
-
-            delete[] l;
-            n++;
-        }
-
-        //Faces
-        else if(type.compare("f ") == 0)
-        {
-            char* l = new char[line.size()+1];
-            memcpy(l,line.c_str(),line.size()+1);
-
-            strtok(l, " ");
-            for (int i=0; i<6 ; i++)
-                faces[f][i] = atof(strtok(NULL, "/"));
-            //Append Material
-            faces[f][6] = mtl;
-
-            delete[] l;
-            f++;
-        }
-    }
-    //Close OBJ File
-    inOBJ.close();
-}
-
-void Model::writeH(std::string fp, std::string name)
-{
-    std::cout<<"aaaaaaa"<<std::endl;
-    //Create H File
-    std::ofstream outH;
-    outH.open(fp);
-    if(!outH.is_open())
-    {
-        std::cout<< "ERROR CREATING H FILE at 141"<< std::endl;
-        exit(1);
-    }
-
-    //Write to H file
-    outH<< "// This is a .h file for the model: "<<name<<std::endl;
-    outH<< std::endl;
-
-    //Write statistics
-    outH << "// Positions: " << this->positions << std::endl;
-    outH << "// Texels: " << this->texels << std::endl;
-    outH << "// Normals: " << this->normals << std::endl;
-    outH << "// Faces: " << this->faces << std::endl;
-    outH << "// Vertices: " << this->vertices << std::endl;
-    outH << "// Materials: " << this->materials << std::endl;
-    outH << std::endl;
-
-    // Write declarations
-    outH << "const int " << name << "Vertices;" << std::endl;
-    outH << "const float " << name << "Positions[" << this->vertices*3 << "];" << std::endl;
-    outH << "const float " << name << "Texels[" << this->vertices*2 << "];" << std::endl;
-    outH << "const float " << name << "Normals[" << this->vertices*3 << "];" << std::endl;
-    outH << endl;
-
-    outH << "const int " << name << "Materials;" << std::endl;
-    outH << "const int " << name << "Firsts[" << this->materials << "];" << std::endl;
-    outH << "const int " << name << "Counts[" << this->materials << "];" << std::endl;
-    outH << endl;
-
-    outH << "const float " << name << "Diffuses[" << this->materials << "]" << "[" << 3 << "];" << std::endl;
-    outH << "const float " << name << "Speculars[" << this->materials << "]" << "[" << 3 << "];" << std::endl;
-    outH << std::endl;
-
-    // Close H File
-    outH.close();
-}
-
-void Model::writeCvertices(std::string fp, std::string name)
-{
-    //Create C file
-    std::ofstream outC;
-    outC.open(fp);
-    if(!outC.is_open())
-    {
-        std::cout << "ERROR CREATING C FILE at 185" << std::endl;
-        exit(1);
-    }
-
-    //Write to C file
-    outC << "// This is a .c file for the model: "<<name << std::endl;
-    outC <<std::endl;
-
-    // Header
-    outC << "#include " << "\"" << name << ".h" << "\"" << std::endl;
-    outC << std::endl;
-
-    // Vertices
-    outC << "const int " << name << "Vertices = " << this->vertices << ";" << std::endl;
-    std::cout<<this->vertices<<"x"<<std::endl;
-    outC << std::endl;
-
-    // Close C file
-    outC.close();
-}
-
-void Model::writeCpositions(std::string fp, std::string name,  int faces[][6], float positions[][3], int counts[])
-{
-    // Append C file
-
-    std::ofstream outC;
-    outC.open(fp, std::ios::app);
-    // outC.open(fp);
-    // Positions
-    outC << "const float " << name << "Positions[" << this->vertices*3 << "] = " << std::endl;
-    outC << "{" << std::endl;
-    for(int j=0; j<this->materials; j++)
-    {
-        counts[j] = 0;
-
-        for(int i=0; i<this->faces; i++)
-        {
-            if(faces[i][9] == j)
-            {
-                int vA = faces[i][0] - 1;
-                int vB = faces[i][2] - 1;
-                int vC = faces[i][4] - 1;
-
-                outC << positions[vA][0] << ", " << positions[vA][1] << ", " << positions[vA][2] << ", " << std::endl;
-                outC << positions[vB][0] << ", " << positions[vB][1] << ", " << positions[vB][2] << ", " << std::endl;
-                outC << positions[vC][0] << ", " << positions[vC][1] << ", " << positions[vC][2] << ", " << std::endl;
-
-                counts[j] += 3;
             }
         }
     }
-    outC << "};" << std::endl;
-    outC << std::endl;
-
-    // Close C file
-    outC.close();
 }
-
-void Model::writeCtexels(std::string fp, std::string name,  int faces[][6], float texels[][2])
-{
-    // Append C file
-    std::ofstream outC;
-    outC.open(fp, ios::app);
-
-    // Texels
-    outC << "const float " << name << "Texels[" << this->vertices*2 << "] = " << std::endl;
-    outC << "{" << std::endl;
-    for(int j=0; j<this->materials; j++)
-    {
-        for(int i=0; i<this->faces; i++)
-        {
-            if(faces[i][6] == j)
-            {
-                int vtA = faces[i][1] - 1;
-                int vtB = faces[i][3] - 1;
-                int vtC = faces[i][5] - 1;
-
-                outC << texels[vtA][0] << ", " << texels[vtA][1] << ", " << std::endl;
-                outC << texels[vtB][0] << ", " << texels[vtB][1] << ", " << std::endl;
-                outC << texels[vtC][0] << ", " << texels[vtC][1] << ", " << std::endl;
-            }
-        }
-    }
-    outC << "};" << std::endl;
-    outC << std::endl;
-
-    // Close C file
-    outC.close();
-}
-
-void Model::writeCnormals(std::string fp, std::string name, int faces[][6], float normals[][3])
-{
-    /*
-    // Append C file
-    std::ofstream outC;
-    outC.open(fp, ios::app);
-
-    // Normals
-    outC << "const float " << name << "Normals[" << this->vertices*3 << "] = " << std::endl;
-    outC << "{" << std::endl;
-    for(int j=0; j<this->materials; j++)
-    {
-        for(int i=0; i<this->faces; i++)
-        {
-            if(faces[i][9] == j)
-            {
-                int vnA = faces[i][2] - 1;
-                int vnB = faces[i][5] - 1;
-                int vnC = faces[i][8] - 1;
-
-                outC << normals[vnA][0] << ", " << normals[vnA][1] << ", " << normals[vnA][2] << ", " << std::endl;
-                outC << normals[vnB][0] << ", " << normals[vnB][1] << ", " << normals[vnB][2] << ", " << std::endl;
-                outC << normals[vnC][0] << ", " << normals[vnC][1] << ", " << normals[vnC][2] << ", " << std::endl;
-            }
-        }
-    }
-    outC << "};" << std::endl;
-    outC << std::endl;
-
-    // Close C file
-    outC.close();
-    */
-}
-
-int Model::getMTLinfo(std::string fp)
+int Model::getMTLinfo(const string &fp)
 {
     int m=0;
+    //Open mtl file
+    std::ifstream in(fp.c_str());
+    if(!in.good())
+        throw cpe::exception_cpe("Cannot read mtl file"+fp, MACRO_EXCEPTION_PARAMETER);
 
-    //Open MTL File
-    std::ifstream inMTL;
-    inMTL.open(fp);
-    if(!inMTL.is_open())
+    std::string buffer;
+    //Lecture du fichier entier
+    while(in.good() == true)
     {
-        cout << "ERROR OPENING MTL FILE" << endl;
-        exit(1);
+        //lecture d'une ligne
+        std::getline(in,buffer);
+        if(buffer.size()>0) //Si la ligne n'est pas vide
+        {
+            std::stringstream tokens_buffer(buffer);
+            std::string first_word;
+            if(first_word.length()>0 && first_word[0] != '#')
+            {
+                if(first_word=="newmtl")
+                    m++; //nombre de matériaux
+            }
+        }
     }
-
-    // Read MTL file
-    while(!inMTL.eof())
-    {
-        string line;
-        getline(inMTL, line);
-        string type = line.substr(0,2);
-
-        if(type.compare("ne") == 0)
-            m++;
-    }
-
-    // Close MTL file
-    inMTL.close();
-
+    in.close(); //Close tje mtl file
     return m;
 }
 
-void Model::extractMTLdata(std::string fp, std::string* materials, float diffuses[][3], float speculars[][3])
+void Model::extractMTLdata(const string &fp)
 {
-    // Counters
-    int m = 0;
-    int d = 0;
-    int s = 0;
+    //Compteurs
+    int m=0, d=0, s=0; //materiaux, diffuse, specular
+    //Open mtl file
+    std::ifstream in(fp.c_str());
 
-    // Open MTL file
-    std::ifstream inMTL;
-    inMTL.open(fp);
-    if(!inMTL.is_open())
+    if(!in.good())
+        throw cpe::exception_cpe("Cannot open mtl file "+fp,MACRO_EXCEPTION_PARAMETER);
+
+    std::string buffer;
+
+    //Lecture du fichier en entier
+    while(in.good() == true)
     {
-        cout << "ERROR OPENING MTL FILE" << endl;
-        exit(1);
-    }
+        //Lecture d'une ligne
+        std::getline(in,buffer);
 
-    // Read MTL file
-    while(!inMTL.eof())
-    {
-        std::string line;
-        std::getline(inMTL, line);
-        std::string type = line.substr(0,2);
-
-        // Names
-        if(type.compare("ne") == 0)
+        if(buffer.size()>0) //Si la ligne n'est pas vide
         {
-            // Extract token
-            std::string l = "newmtl ";
-            materials[m] = line.substr(l.size());
-            m++;
-        }
+            std::stringstream tokens_bufer(buffer);
+            std::string first_word="\0";
+             //   std::cout<<first_word<<std::endl;
+            tokens_bufer>>first_word;
+            //std::cout<<first_word<<std::endl;
+            if(first_word.length()>0 && first_word[0] != '#')
+            {
+                std::cout<<first_word<<std::endl;
+                //Names
+                if(first_word=="newmtl")
+                {
+                    read_name_mtl(tokens_bufer,*this);
+                }
+                //Diffuse
+                if(first_word=="Kd"){}
+                //Speculars
+                if(first_word=="Ks"){}
+            }
 
-        // Diffuses
-        else if(type.compare("Kd") == 0)
-        {
-            // Copy line for parsing
-            char* l = new char[line.size()+1];
-            std::memcpy(l, line.c_str(), line.size()+1);
-
-            // Extract tokens
-            strtok(l, " ");
-            for(int i=0; i<3; i++)
-                diffuses[d][i] = atof(strtok(NULL, " "));
-
-            // Wrap up
-            delete[] l;
-            d++;
-        }
-
-        // Speculars
-        else if(type.compare("Ks") == 0)
-        {
-            char* l = new char[line.size()+1];
-            std::memcpy(l, line.c_str(), line.size()+1);
-
-            strtok(l, " ");
-            for(int i=0; i<3; i++)
-                speculars[s][i] = atof(strtok(NULL, " "));
-
-            delete[] l;
-            s++;
         }
     }
-
-    // Close MTL file
-    inMTL.close();
+    //Close MTL
+    in.close();
 }
 
-void Model::writeCmaterials(std::string fp, std::string name, int firsts[], int counts[])
+
+
+
+
+
+
+
+std::vector<int> split_face_data(std::string const& face_data_str)
 {
-    // Append C file
-    std::ofstream outC;
-    outC.open(fp, ios::app);
+    std::vector<int> data;
+    std::string current_str=face_data_str;
 
-    // Materials
-    outC << "const int " << name << "Materials = " << this->materials << ";" << endl;
-    outC << endl;
-
-    // Firsts
-    outC << "const int " << name << "Firsts[" << this->materials << "] = " << endl;
-    outC << "{" << endl;
-    for(int i=0; i<this->materials; i++)
+    while(current_str.length()>0)
     {
-        if(i == 0)
-            firsts[i] = 0;
-        else
-            firsts[i] = firsts[i-1]+counts[i-1];
+        while(current_str.length()>0 && current_str[0]=='/')
+        {
+            std::string temp_str=current_str.substr(1,current_str.length()-1);
+            current_str=temp_str;
+        }
 
-        outC << firsts[i] << "," << endl;
+        int value;
+        std::stringstream tokenizer(current_str);
+        tokenizer>>value;
+        data.push_back(value);
+
+        std::string residual;
+        tokenizer>>residual;
+
+        current_str=residual;
     }
-    outC << "};" << endl;
-    outC << endl;
 
-    // Counts
-    outC << "const int " << name << "Counts[" << this->materials << "] = " << endl;
-    outC << "{" << endl;
-    for(int i=0; i<this->materials; i++)
+    return data;
+}
+void read_vertex_obj(std::stringstream& tokens, Model& mod)
+{
+    cpe::vec3 v;
+    tokens >> v.x();
+    tokens >> v.y();
+    tokens >> v.z();
+    mod.vertices_tab.push_back(v);
+}
+
+void read_material_obj(std::stringstream& tokens, Model& mod)
+{
+    /*
+    std::string name_tex;
+    tokens >> name_tex;
+    mod.list_mat_tex.push_back(name_tex);
+    */
+}
+
+void read_face_obj(std::stringstream& tokens, Model& mod, int mtl)
+{
+    std::vector<std::vector<int>> face_data;
+    while(tokens.good())
     {
-        outC << counts[i] << "," << endl;
+        std::string polygon_index_str;
+        tokens>>polygon_index_str;
+        std::vector<int> const current_data = split_face_data(polygon_index_str);
+        face_data.push_back(current_data);
     }
-    outC << "};" << endl;
-    outC << endl;
-
-    // Close C file
-    outC.close();
-}
-
-void Model::writeCdiffuses(std::string fp, std::string name, float diffuses[][3])
-{
-    // Append C file
-    std::ofstream outC;
-    outC.open(fp, ios::app);
-
-    // Diffuses
-    outC << "const float " << name << "Diffuses[" << this->materials << "][3] = " << endl;
-    outC << "{" << endl;
-    for(int i=0; i<this->materials; i++)
+    std::vector<int> temp_vertex;
+    std::vector<int> temp_texture;
+    for(auto const& index_face : face_data)
     {
-        outC << diffuses[i][0] << ", " << diffuses[i][1] << ", " << diffuses[i][2] << ", " << endl;
+        int const N_dim = index_face.size();
+        for(int k_dim=0; k_dim<N_dim; ++k_dim)
+        {
+            int const value = index_face[k_dim];
+            switch(k_dim)
+            {
+            case 0:
+                temp_vertex.push_back(value-1);
+                std::cout<<value-1<<std::endl;
+                break;
+            case 1:
+                temp_texture.push_back(value-1);
+                break;
+            default:
+                std::cerr<<"Error reading file"<<std::endl;
+                exit(1);
+            }
+        }
     }
-    outC << "};" << endl;
-    outC << endl;
 
-    // Close C file
-    outC.close();
+    if(temp_vertex.size()>0)
+        mod.faces_tab_vertex.push_back(temp_vertex);
+    if(temp_texture.size()>0)
+        mod.faces_tab_texel.push_back(temp_texture);
 }
 
-void Model::writeCspeculars(std::string fp, std::string name, float speculars[][3])
+void read_name_mtl(std::stringstream& tokens, Model& mod)
 {
-    // Append C file
-    std::ofstream outC;
-    outC.open(fp, ios::app);
+    std::string name_texture;
+    tokens >> name_texture;
+    mod.list_mat_tex.push_back(name_texture);
 
-    // Speculars
-    outC << "const float " << name << "Speculars[" << this->materials << "][3] = " << endl;
-    outC << "{" << endl;
-    for(int i=0; i<this->materials; i++)
-    {
-        outC << speculars[i][0] << ", " << speculars[i][1] << ", " << speculars[i][2] << ", " << endl;
-    }
-    outC << "};" << endl;
-    outC << endl;
-
-    // Close C file
-    outC.close();
 }
 
-void Model::setMaterials(std::string fp)
-{
-    materials = Model::getMTLinfo(fp);
-}
-
-int Model::getPositions()
-{
-    return this->positions;
-}
-
-int Model::getTexels()
-{
-    return this->texels;
-}
-
-int Model::getNormals()
-{
-    return this->normals;
-}
-
-int Model::getFaces()
-{
-    return this->faces;
-}
-
-int Model::getMaterials()
-{
-    return this->materials;
-}
+int Model::get_vertex() const { return this->vertex;}
+int& Model::set_vertex() {return vertex; }
+int Model::get_vertices() const {return vertices; }
+int& Model::set_vertices(){return vertices; }
+int Model::get_normals() const{return normals; }
+int& Model::set_normals(){return normals; }
+int Model::get_color() const{return color; }
+int& Model::set_color(){return color; }
+int Model::get_texture_coord() const{return texture_coord; }
+int& Model::set_texture_coord(){return texture_coord; }
+int Model::get_faces() const{return faces; }
+int& Model::set_faces(){return faces; }
+int Model::get_nbMaterials() const {return nbMaterials ;}
+int& Model::set_nbMaterials(){ return nbMaterials ;}

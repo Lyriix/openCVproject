@@ -1,4 +1,5 @@
 #include "obj2gl.hpp"
+#include <sstream>
 
 model::model():vertices(0), positions(0), texels(0), faces(0), materials(0)
 {}
@@ -49,6 +50,60 @@ void model::extractObjData(std::string fp, float positions[][3], float texels[][
         exit(1);
     }
 
+    std::string buffer;
+    while(in.good() == true)
+    {
+        //lecture ligne
+        std::getline(in,buffer);
+        if(buffer.size()>0)
+        {
+            std::stringstream tokens_buffer(buffer);
+            std::string first;
+            tokens_buffer>>first;
+            if(first.length()>0 && first[0]!='#')
+            {
+                //vertices
+                if(first=="v")
+                {
+                    for(int i=0;i<3;i++)
+                    {
+                        tokens_buffer >> positions[p][i];
+                        std::cout<< positions[p][i]<<std::endl;
+                    }
+                    p++;
+                }
+
+                //texture
+                if(first=="vt")
+                {
+                    for(int i=0; i<2; i++)
+                        tokens_buffer >> texels [t][i];
+                    t++;
+
+                }
+
+                //materials
+                if(first=="usemtl")
+                {
+                    std::string material = buffer.substr(first.size());
+                    for(int i=0; i<m; i++)
+                        if(material.compare(materials[i]) == 0)
+                            mtl=i;
+                }
+
+
+                //connectivity
+                if(first=="f")
+                {
+                   for(int i=0; i<6 ; i++)
+                       tokens_buffer >> faces[f][i];
+                   f++;
+                   faces[f][6] = mtl;
+                }
+            }
+
+        }
+/*
     //Read the OBJ File
     std::string line;
     while(std::getline(in, line))
@@ -70,6 +125,7 @@ void model::extractObjData(std::string fp, float positions[][3], float texels[][
         //Positions sommets
         if(type.compare("v ")==0)
         {
+
             //copy line for parsing
             char* l = new char[line.size()+1];
             std::memcpy(l,line.c_str(),line.size()+1);
@@ -77,10 +133,15 @@ void model::extractObjData(std::string fp, float positions[][3], float texels[][
             //Extraction du jeton
             std::strtok(l," "); //Création des jetons
             for (int i=0; i<3; i++)
+            {
                 positions[p][i]= std::atof(std::strtok(NULL," ")); //passage jeton suivant
+                std::cout<< positions[p][i] <<std::endl;
+            }
             //Wrap up
             delete[] l;
             p++;
+
+
         }
        //Texels , textures
         else if(type.compare("vt") == 0) //texture
@@ -103,13 +164,15 @@ void model::extractObjData(std::string fp, float positions[][3], float texels[][
 
             strtok(l, " ");
             for (int i=0; i<6 ; i++)
-                faces[f][i] = atof(strtok(NULL, "/"));
+                faces[f][i] = atof(strtok(NULL, " /"));
             //Append Material
             faces[f][6] = mtl;
 
             delete[] l;
             f++;
-        }/* */
+        }
+ */
+
     }
     //Close the obj file
     in.close();
@@ -288,7 +351,7 @@ void model::writeCpositions(std::string fp, std::string name,  int faces[][6], f
                 outC << positions[vB][0] << ", " << positions[vB][1] << ", " << positions[vB][2] << ", " << std::endl;
                 outC << positions[vC][0] << ", " << positions[vC][1] << ", " << positions[vC][2] << ", " << std::endl;
 
-                counts[j] += 3;
+                counts[j] += 3; //nbr de positions par matériaux
             }
         }
     }

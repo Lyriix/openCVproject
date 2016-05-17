@@ -93,8 +93,9 @@ private:
 
     cpe::mesh mesh_avatar;
     cpe::mesh_opengl mesh_avatar_opengl;
-   // GLuint texture_avatar;
-    std::vector<GLuint> texture_avatar;
+   GLuint texture_avatar;
+    //GLuint tex_head;
+
 
     /** OpenCV webcam capture interface */
     cv::VideoCapture capture;
