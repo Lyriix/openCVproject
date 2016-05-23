@@ -15,8 +15,8 @@
 #include "../../lib/opengl/mesh_opengl.hpp"
 #include "../../lib/interface/camera_matrices.hpp"
 #include "faceTrack.hpp"
-#include "blender2opengl .hpp"
-#include "obj2gl.hpp"
+
+
 #include <vector>
 #include <opencv2/opencv.hpp>
 
@@ -91,10 +91,12 @@ private:
     cpe::mesh mesh_sphere;
     cpe::mesh_opengl mesh_sphere_opengl;
 
-    cpe::mesh mesh_avatar;
-    cpe::mesh_opengl mesh_avatar_opengl;
-   GLuint texture_avatar;
-    //GLuint tex_head;
+    cpe::mesh mesh_avatar_body;
+    cpe::mesh_opengl mesh_avatar_body_opengl;
+    GLuint texture_avatar_body;
+    cpe::mesh mesh_avatar_head;
+    cpe::mesh_opengl mesh_avatar_head_opengl;
+    GLuint texture_avatar_head;
 
 
     /** OpenCV webcam capture interface */
@@ -109,8 +111,6 @@ private:
     std::vector<cv::Rect> faces;
     cv::Mat faceROI;
 
-    //Model model;
-    model mod;
 
 
 

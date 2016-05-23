@@ -7,8 +7,10 @@ faceTrack::faceTrack()
     cascade = ( CvHaarClassifierCascade*)cvLoad("haarcascade_frontalface_alt.xml",0,0,0);
     storage = cvCreateMemStorage(0);
 
+    //zcvReleaseHaarClassifierCascade(&cascade);
+    //cvReleaseMemStorage(&storage);
 }
-
+/*
 IplImage*faceTrack::detectFaces(IplImage *img_src)
 {
 
@@ -36,8 +38,8 @@ IplImage*faceTrack::detectFaces(IplImage *img_src)
     }
 
 
-    //zcvReleaseHaarClassifierCascade(&cascade);
-    //cvReleaseMemStorage(&storage);
+
 
      return img_dest;
 }
+*/
