@@ -3,7 +3,7 @@
 #include "myWidgetGL.hpp"
 #include "../../lib/common/error_handling.hpp"
 #include "ui_mainwindow.h"
-
+#include "../scene/scene.hpp"
 #include <iostream>
 
 myWindow::myWindow(QWidget *parent)
@@ -33,11 +33,18 @@ myWindow::myWindow(QWidget *parent)
     connect(ui->quit,SIGNAL(clicked()),this,SLOT(action_quit()));
     connect(ui->draw,SIGNAL(clicked()),this,SLOT(action_draw()));
     connect(ui->wireframe,SIGNAL(clicked()),this,SLOT(action_wireframe()));
+    connect(ui->saveFace,SIGNAL(clicked()),this,SLOT(action_saveFace()));
+
+    //sc = new scene();
 
 }
 
 myWindow::~myWindow()
-{}
+{
+   /* if (sc!=NULL)
+
+        delete sc;*/
+}
 
 void myWindow::action_quit()
 {
@@ -55,3 +62,11 @@ void myWindow::action_wireframe()
     glWidget->wireframe(state_wireframe);
 }
 
+void myWindow::action_saveFace()
+{
+    //bool const doSave = ui->saveFace->;
+    glWidget->sauvegardeImage(true);
+    // sc->saveYourFace(true);
+   // scene.saveYourFace(doSave);
+
+}

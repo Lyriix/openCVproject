@@ -5,6 +5,7 @@
 #ifndef SCENE_HPP
 #define SCENE_HPP
 
+
 #include <GL/gl.h>
 #include <GL/glew.h>
 
@@ -40,6 +41,15 @@ public:
     /** Set the pointer to the parent Widget */
     void set_widget(myWidgetGL* widget_param);
 
+    /** Save a face for avatar */
+    void saveYourFace(bool const valid);
+
+    /** Set saveYourFace */
+    void setSaveYourFace(bool valid);
+
+    /** Get Boolean face to save */
+    bool& getSaveYourFace();
+
 
 private:
 
@@ -59,8 +69,8 @@ private:
     GLuint generate_avatar_head_texture(cv::Mat const& im);
     /** Load a shader and send the camera matrices */
     void prepare_shader(GLuint shader_id);
-    /** Perform some image analysis */
-    void analyse_image(cv::Mat &frame);
+    /** Perform some image analysis, return number of detected faces */
+    int analyse_image(cv::Mat &frame);
 
     /** Generate avatar head */
     void generate_avatar_head();
@@ -72,6 +82,9 @@ private:
 
     /** Default id for the texture (white texture) */
     GLuint texture_default;
+
+    /** id for avatar head texture from webcam */
+    GLuint texture_webcamROI;
 
     /** The id of the shader do draw meshes */
     GLuint shader_mesh;
@@ -110,6 +123,8 @@ private:
     cv::CascadeClassifier haar_cascade;
     std::vector<cv::Rect> faces;
     cv::Mat faceROI;
+    bool savef;
+    int nbVisage;
 
 
 

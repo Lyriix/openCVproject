@@ -15,7 +15,7 @@ namespace Ui
 class MainWindow;
 }
 class myWidgetGL;
-
+class scene;
 /** Declaration of the Window class */
 class myWindow: public QMainWindow
 {
@@ -36,6 +36,8 @@ private slots:
     void action_draw();
     /** Set the Wireframe mode for the meshes */
     void action_wireframe();
+    /** Sauvegarder un visage pour affichage */
+    void action_saveFace();
 
 private:
 
@@ -43,6 +45,8 @@ private:
     Ui::MainWindow *ui;
     /** The OpenGL Widget */
     myWidgetGL *glWidget;
+
+
 
 
 

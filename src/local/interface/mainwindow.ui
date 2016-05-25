@@ -70,7 +70,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QPushButton" name="quit">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -86,6 +86,13 @@
         </property>
         <property name="text">
          <string>Quit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="saveFace">
+        <property name="text">
+         <string>Save your face</string>
         </property>
        </widget>
       </item>
@@ -106,7 +113,7 @@
      <x>0</x>
      <y>0</y>
      <width>902</width>
-     <height>24</height>
+     <height>25</height>
     </rect>
    </property>
   </widget>

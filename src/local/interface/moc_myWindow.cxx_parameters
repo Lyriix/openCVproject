@@ -3,10 +3,10 @@
 -I/usr/include/qt4
 -I/usr/include/qt4/QtGui
 -I/usr/include/qt4/QtCore
--I/home/damien/work/teaching/2014_2015/2015_05_projet/2015_05_projet/projet/code_02/projet
--D$<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>
+-I/fs03/share/users/charly.girot/home/PROJET_MAJEUR/PrT/openCVproject
+-DQT_NO_DEBUG
 -DQT_GUI_LIB
 -DQT_CORE_LIB
 -o
-/home/damien/work/teaching/2014_2015/2015_05_projet/2015_05_projet/projet/code_02/projet/src/local/interface/moc_myWindow.cxx
-/home/damien/work/teaching/2014_2015/2015_05_projet/2015_05_projet/projet/code_02/projet/src/local/interface/myWindow.hpp
+/fs03/share/users/charly.girot/home/PROJET_MAJEUR/PrT/openCVproject/src/local/interface/moc_myWindow.cxx
+/fs03/share/users/charly.girot/home/PROJET_MAJEUR/PrT/openCVproject/src/local/interface/myWindow.hpp

@@ -268,3 +268,8 @@ void myWidgetGL::draw_axes()
     axes.draw();
     glLineWidth(1.0);
 }
+
+void myWidgetGL::sauvegardeImage(bool est_actif)
+{
+    this->scene_3d.setSaveYourFace(true);
+}

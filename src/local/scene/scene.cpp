@@ -63,19 +63,10 @@ void scene::load_scene()
     mesh_avatar_body_opengl.fill_vbo(mesh_avatar_body);
 
     texture_avatar_head = load_texture_file("data/Megaman/gatoune.jpg");
-    mesh_avatar_head = load_mesh_file("data/Megaman/Megaman_head3.obj");
+    mesh_avatar_head = load_mesh_file("data/Megaman/Megaman_head5.obj");
     mesh_avatar_head.transform_apply_scale(0.2f,0.2f,0.2f);
     mesh_avatar_head_opengl.fill_vbo(mesh_avatar_head);
 
-
-    /*texture_avatar = load_texture_file("data/Megaman/texture.png");
-    //tex_head = load_texture_file("data/Megaman/head.png");
-
-    mesh_avatar = load_mesh_file("data/Megaman/Megaman_Retex.obj");
-    mesh_avatar.transform_apply_scale(0.2f,0.2f,0.2f);
-    mesh_avatar_opengl.fill_vbo(mesh_avatar);*/
-    //model();
-    //scene::load_avatar();
 
 
     //*****************************************//
@@ -121,33 +112,71 @@ void scene::draw_scene()
     // Get webcam image
     cv::Mat frame;
     capture >> frame;
-    analyse_image(frame);
+    nbVisage = analyse_image(frame);
     // Generate OpenGL texture from webcam image
     GLuint texture_webcam = generate_texture_webcam(frame);
 
+
     //Generate texture from ROI
-    cv::flip(faceROI,faceROI,0);
-    cv::Mat faceRoiTaille;
+    //cv::flip(faceROI,faceROI,0);
+    //cv::Mat faceRoiTaille;
 
 
 
-    GLuint texture_webcamROI = generate_texture_webcam(faceROI);//generate_avatar_head_texture(frame);
+    //GLuint texture_webcamROI = generate_texture_webcam(faceROI);//generate_avatar_head_texture(frame);
     // Draw the object with the webcam texture
-    glBindTexture(GL_TEXTURE_2D,texture_webcam);  PRINT_OPENGL_ERROR();
-    mesh_cube_opengl.draw();
+    //glBindTexture(GL_TEXTURE_2D,texture_webcam);  PRINT_OPENGL_ERROR();
+    //mesh_cube_opengl.draw();
 
     //Draw the avatar body
     glBindTexture(GL_TEXTURE_2D,texture_avatar_body); PRINT_OPENGL_ERROR();
     mesh_avatar_body_opengl.draw();
     //Draw the avatar head
+    if(getSaveYourFace() == true)
+    {
+        saveYourFace(true);
 
-    glBindTexture(GL_TEXTURE_2D,texture_webcamROI); PRINT_OPENGL_ERROR();
-    mesh_avatar_head_opengl.draw();
-    // Delete the texture on the GPU
-    glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
-    glDeleteTextures(1,&texture_webcamROI);
+        // Delete the texture on the GPU
+
+       // glDeleteTextures(1,&texture_webcamROI);
+    }
+
+    if(texture_webcamROI != NULL)
+    {
+        glBindTexture(GL_TEXTURE_2D,texture_webcamROI); PRINT_OPENGL_ERROR();
+        mesh_avatar_head_opengl.draw();
+    }
+    //glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
 
 
+}
+
+
+void scene::saveYourFace(const bool valid)
+{
+    //Get webcam image
+    cv::Mat frame;
+    capture >> frame;
+
+   // int nbVisage = analyse_image(frame);
+    if(valid == true)
+    {
+        if(nbVisage==0)
+        {
+            cv::putText(frame,"Pas de visage à sauvegarcer",cv::Point(40,40),1,1,cv::Scalar(255,0,0));
+
+            if(texture_webcamROI != NULL)
+                glDeleteTextures(1,&texture_webcamROI);
+        }
+        if(nbVisage==1)
+        {
+            cv::flip(faceROI,faceROI,0);
+            texture_webcamROI = generate_texture_webcam(faceROI);
+            this->savef == true;
+
+           setSaveYourFace(false);
+        }
+    }
 
 }
 
@@ -206,7 +235,7 @@ void scene::generate_avatar_head()
 
 void scene::start_webcam()
 {
-    capture=cv::VideoCapture(0);
+    //capture=cv::VideoCapture(0);
     if(!capture.isOpened())
     {
         std::cerr<<"Failed to open Camera"<<std::endl;
@@ -229,7 +258,7 @@ void scene::load_common_data()
 
 
 
-void scene::analyse_image(cv::Mat& frame)
+int scene::analyse_image(cv::Mat& frame)
 {
 
     cv::pyrDown(frame,frame);
@@ -253,10 +282,11 @@ void scene::analyse_image(cv::Mat& frame)
             //faceROI = frame(faces[i]);
 
             faceROI=cv::Mat(frame,faces[i]);
-           cv::resize(faceROI,faceROI,cv::Size(480,720));
+            cv::resize(faceROI,faceROI,cv::Size(480,720));
         }
     }
 
+    return faces.size();
 }
 
 void scene::prepare_shader(GLuint const shader_id)
@@ -327,7 +357,7 @@ GLuint scene::generate_avatar_head_texture(const cv::Mat &im)
 
 
 scene::scene()
-    :shader_mesh(0),shader_cube(0),time_advance(0)
+    :shader_mesh(0),shader_cube(0),time_advance(0),capture(0),savef(false)
 {}
 
 
@@ -341,4 +371,14 @@ void scene::set_widget(myWidgetGL* widget_param)
     pwidget=widget_param;
 }
 
+
+void scene::setSaveYourFace(bool valid)
+{
+    this->savef = valid;
+}
+
+bool& scene::getSaveYourFace()
+{
+    return this->savef;
+}
 
