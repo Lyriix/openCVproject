@@ -83,7 +83,8 @@ void myWindow::action_start_handtrack()
 
 void myWindow::action_faceTrack()
 {
-
+    bool const state_display_faceetrack = ui->showFaceTrack->isChecked();
+    glWidget->DisplayFacetrack(state_display_faceetrack);
 }
 
 void myWindow::action_handTrack()

@@ -107,7 +107,6 @@ void scene::load_scene()
 
 void scene::draw_scene()
 {
-std::cout<<"start draw scene"<<std::endl;
     prepare_shader(shader_mesh);
     glBindTexture(GL_TEXTURE_2D,texture_default);  PRINT_OPENGL_ERROR();
     mesh_ground_opengl.draw();
@@ -116,50 +115,62 @@ std::cout<<"start draw scene"<<std::endl;
     prepare_shader(shader_cube);
     glUniform1f(get_uni_loc(shader_cube,"time"),time_advance);
 
-    // Get webcam image
+    //********* Get webcam image ***********//
     cv::Mat frame;
     capture >> frame;
     nbVisage = analyse_image(frame);
-    // Generate OpenGL texture from webcam image
-    GLuint texture_webcam = generate_texture_webcam(frame);
 
-std::cout<<"before drawned avatar"<<std::endl;
-    //Draw the avatar body
+    //*********** Generate OpenGL texture from webcam image************//
+    GLuint texture_webcam = generate_texture_webcam(frame); //NB : on s'en sert pas pour le moment
+
+    //************* Draw the avatar body ***************//
     glBindTexture(GL_TEXTURE_2D,texture_avatar_body); PRINT_OPENGL_ERROR();
     mesh_avatar_body_opengl.draw();
-    //Draw the avatar head
-    if(getSaveYourFace() == true)
+
+    //********** Draw the avatar head ***********//
+    if(getSaveYourFace() == true)//save f
     {
-        saveYourFace(true);
-
-        // Delete the texture on the GPU
-
-       // glDeleteTextures(1,&texture_webcamROI);
+        if(aFaceIsAlreadySaved)
+        { // Delete the texture on the GPU si il y en avait déja une
+            glDeleteTextures(1,&texture_webcamROI);
+        }
+        saveYourFace(true);//Sauvegarde de la texture
+        aFaceIsAlreadySaved = true;
     }
 
-    if(texture_webcamROI != NULL)
+    if(texture_webcamROI != NULL) //Affichage de la texture sauvegardée
     {
         glBindTexture(GL_TEXTURE_2D,texture_webcamROI); PRINT_OPENGL_ERROR();
         mesh_avatar_head_opengl.draw();
     }
 
-
+    //**************** Initialisation de la détection et du suivi de main **************//
     if(initHand == true)
     {
-        std::cout<<"before start handtrack"<<std::endl;
         startHandtrack(frame);
     }
-
+    //Si la detection de main à été initilialisé on effectue son suivi
     if(cpt != 0)
     {
-        std::cout<<"before detect hand"<<std::endl;
         hand1.Detect_Hand(capture);
-
     }
- move_hand();
 
- glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
- std::cout<<"end move hand"<<std::endl;
+    // ********** Affichage d'une fenetre avec le visga trackée (lorsqu'il y en a une seule, pour deux peut etre probème, en tout cas indeterminé) à améliorer avec prise en compte des vecteurs peut etre
+    if(displayFace)
+    {
+        cv::imshow("facetrack",faceROI);
+    }
+    if(no_displayFace)
+    {
+        cv::destroyWindow("facetrack");
+        no_displayFace = false;
+    }
+
+    //********** Déplacement de la main, si la detection de main n'est pas initialisé, pas de mouvement ************//
+    move_hand();
+
+
+    glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR(); //NB : elle existe mais on s'en sert pas pour le moemnt
 }
 
 
@@ -169,12 +180,12 @@ void scene::saveYourFace(const bool valid)
     cv::Mat frame;
     capture >> frame;
 
-   // int nbVisage = analyse_image(frame);
+    // int nbVisage = analyse_image(frame);
     if(valid == true)
     {
         if(nbVisage==0)
         {
-            cv::putText(frame,"Pas de visage à sauvegarder",cv::Point(40,40),1,1,cv::Scalar(255,0,0));
+            cv::putText(frame,"Pas de visage à sauvegarder",cv::Point(40,40),1,1,cv::Scalar(255,0,0)); //marche pas dans le contexte oGL
 
             if(texture_webcamROI != NULL)
                 glDeleteTextures(1,&texture_webcamROI);
@@ -185,7 +196,7 @@ void scene::saveYourFace(const bool valid)
             texture_webcamROI = generate_texture_webcam(faceROI);
             this->savef == true;
 
-           setSaveYourFace(false);
+            setSaveYourFace(false);
         }
     }
 
@@ -193,17 +204,15 @@ void scene::saveYourFace(const bool valid)
 
 void scene::startHandtrack(cv::Mat frame)
 {
-        hand1.Col_split_begin = 0;
-        hand1.Col_split_end = frame.rows;
-        //hand1.Col_split_end = 0;
-        hand1.setname_img("Hand 1");
-        hand1.setname_trackbar("Trackbars hand 1");
-        hand1.initHandTrack(capture);
-        hand1.init_Trackbars();
-        hand1.average(capture);
-        cpt = 1;
-        initHand = false;
-       // cv::destroyAllWindows();
+    hand1.Col_split_begin = 0;
+    hand1.Col_split_end = frame.rows;
+    hand1.setname_img("Hand 1");
+    hand1.setname_trackbar("Trackbars hand 1");
+    hand1.initHandTrack(capture);
+    hand1.init_Trackbars();
+    hand1.average(capture);
+    cpt = 1;
+    initHand = false;
 }
 
 void scene::move_hand()
@@ -218,25 +227,19 @@ void scene::move_hand()
         cpt++;
     }
 
-   // std::cout<<"PosInit"<<PosInit<<std::endl;
-
     //On recupere le rectangle correspondant à la main :
     cv::Point PosCourante;
     HandGesture hg = hand1.gethg();
-   // std::cout<<"rectangle :"<<hg.bRect<<std::endl;
-   // std::cout<<"tl :"<<hg.bRect.tl()<<std::endl;
-    //PosCourante = hg.bRect.tl();
 
-    //Teste avec la tete :
+    //Si on a une main on récupère la position
     if(hg.isHand == 1){
         PosCourante.x = hg.bRect.tl().x + hg.bRect.width/2.0;
         PosCourante.y = hg.bRect.tl().y + hg.bRect.height/2.0;
     }
-   // std::cout<<"PosCourante"<<PosCourante<<std::endl;
+
     delta.x = PosCourante.x - PosInit.x;
     delta.y = PosCourante.y - PosInit.y;
 
-   std::cout<<"delta"<<delta<<std::endl;
 
     for(int k = 0; k < mesh_hand.size_vertex(); k++)
     {
@@ -307,7 +310,7 @@ void scene::generate_avatar_head()
 
 void scene::start_webcam()
 {
-    //capture=cv::VideoCapture(0);
+    //NB : initialisation de capture sur la Webcam dans le constructeur de scene pour plus de fléxibilité durant le développement
     if(!capture.isOpened())
     {
         std::cerr<<"Failed to open Camera"<<std::endl;
@@ -343,9 +346,6 @@ int scene::analyse_image(cv::Mat& frame)
 
     for(i= 0 ; i<faces.size(); ++i)
     {
-
-
-
         if(faces[i].x >0 && faces[i].x + faces[i].width < frame.cols && faces[i].y + faces[i].height < frame.rows)
         {
             cv::Point center(faces[i].x + faces[i].width*0.5, faces[i].y + faces[i].height*0.5);
@@ -357,7 +357,6 @@ int scene::analyse_image(cv::Mat& frame)
             cv::resize(faceROI,faceROI,cv::Size(480,720));
         }
     }
-
     return faces.size();
 }
 
@@ -395,8 +394,6 @@ GLuint scene::generate_texture_webcam(cv::Mat const& im)
     if (im.channels() == 1)
         in_color = GL_LUMINANCE;
 
-
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); PRINT_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); PRINT_OPENGL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); PRINT_OPENGL_ERROR();
@@ -429,7 +426,7 @@ GLuint scene::generate_avatar_head_texture(const cv::Mat &im)
 
 
 scene::scene()
-    :shader_mesh(0),shader_cube(0),time_advance(0),capture(0),savef(false),initHand(false),cpt(0)
+    :shader_mesh(0),shader_cube(0),time_advance(0),capture(0),savef(false),initHand(false),cpt(0),aFaceIsAlreadySaved(false),displayFace(false),no_displayFace(false)
 {}
 
 
@@ -463,5 +460,20 @@ void scene::setInitHand(bool valid)
 
 void scene::display_handtrack(bool valid)
 {
-   hand1.setDisplayImages(valid);
+    hand1.setDisplayImages(valid);
+}
+
+void scene::display_facetrack(bool isValid)
+{
+    if(isValid)
+    {
+        this->displayFace = true;
+        this->no_displayFace = false;
+    }
+    else
+    {
+        this->no_displayFace = true;
+        this->displayFace = false;
+    }
+
 }

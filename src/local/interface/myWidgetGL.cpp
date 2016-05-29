@@ -288,3 +288,7 @@ void myWidgetGL::DisplayHandtrack(bool isValid)
     this->scene_3d.display_handtrack(isValid);
     //updateGL();
 }
+void myWidgetGL::DisplayFacetrack(bool isValid)
+{
+    this->scene_3d.display_facetrack(isValid);
+}

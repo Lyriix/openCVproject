@@ -149,7 +149,9 @@ private:
     cv::Mat faceROI;
     bool savef;
     int nbVisage;
-
+    bool aFaceIsAlreadySaved;
+    bool displayFace;
+    bool no_displayFace;
     /** Hand Track */
     handTrack hand1;
     handTrack hand2;
