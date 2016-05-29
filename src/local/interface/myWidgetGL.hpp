@@ -33,6 +33,16 @@ public:
     void wireframe(bool est_actif);
     /** Set the image saving on */
     void sauvegardeImage(bool est_actif);
+    /** start Handtracking */
+    void start_Handtrack();
+    /** Display facetrack */
+    void DisplayFacetrack(bool isValid);
+    /** Display HandTrack */
+    void DisplayHandtrack(bool isValid);
+
+    /** Change display on/off for facetrack */
+
+
     /** Get the current cameras values */
     cpe::camera_matrices const& camera() const;
 

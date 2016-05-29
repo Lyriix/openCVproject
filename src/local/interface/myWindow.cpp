@@ -1,5 +1,6 @@
 #include "myWindow.hpp"
 
+
 #include "myWidgetGL.hpp"
 #include "../../lib/common/error_handling.hpp"
 #include "ui_mainwindow.h"
@@ -34,7 +35,9 @@ myWindow::myWindow(QWidget *parent)
     connect(ui->draw,SIGNAL(clicked()),this,SLOT(action_draw()));
     connect(ui->wireframe,SIGNAL(clicked()),this,SLOT(action_wireframe()));
     connect(ui->saveFace,SIGNAL(clicked()),this,SLOT(action_saveFace()));
-
+    connect(ui->startHandtrack,SIGNAL(clicked()),this,SLOT(action_start_handtrack()));
+    connect(ui->showFaceTrack,SIGNAL(clicked()),SLOT(action_faceTrack()));
+    connect(ui->showHandTrack,SIGNAL(clicked()),this,SLOT(action_handTrack()));
     //sc = new scene();
 
 }
@@ -49,6 +52,7 @@ myWindow::~myWindow()
 void myWindow::action_quit()
 {
     close();
+    cv::destroyAllWindows();
 }
 
 void myWindow::action_draw()
@@ -69,4 +73,21 @@ void myWindow::action_saveFace()
     // sc->saveYourFace(true);
    // scene.saveYourFace(doSave);
 
+}
+
+void myWindow::action_start_handtrack()
+{
+    //handWindow.show();
+    glWidget->start_Handtrack();
+}
+
+void myWindow::action_faceTrack()
+{
+
+}
+
+void myWindow::action_handTrack()
+{
+    bool const state_display_handtrack = ui->showHandTrack->isChecked();
+    glWidget->DisplayHandtrack(state_display_handtrack);
 }

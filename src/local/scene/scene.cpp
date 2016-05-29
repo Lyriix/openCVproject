@@ -17,6 +17,7 @@
 #include <opencv2/objdetect/objdetect.hpp>
 
 
+
 using namespace cpe;
 
 
@@ -25,8 +26,6 @@ void scene::load_scene()
 {
     load_common_data();
     start_webcam();
-    //face=faceTrack();
-
 
     //get webcam dimension
     int width=0;
@@ -93,6 +92,14 @@ void scene::load_scene()
     mesh_ground_opengl.fill_vbo(mesh_ground);
 
 
+    //******************************************//
+    // Hand                                     //
+    //******************************************//
+
+    mesh_hand = load_mesh_file("data/stegosaurus.obj");
+    mesh_hand.fill_empty_field_by_default();
+    mesh_hand.fill_color(cpe::vec3(1.0,1.0,1.0));
+
 
 }
 
@@ -100,7 +107,7 @@ void scene::load_scene()
 
 void scene::draw_scene()
 {
-
+std::cout<<"start draw scene"<<std::endl;
     prepare_shader(shader_mesh);
     glBindTexture(GL_TEXTURE_2D,texture_default);  PRINT_OPENGL_ERROR();
     mesh_ground_opengl.draw();
@@ -116,18 +123,7 @@ void scene::draw_scene()
     // Generate OpenGL texture from webcam image
     GLuint texture_webcam = generate_texture_webcam(frame);
 
-
-    //Generate texture from ROI
-    //cv::flip(faceROI,faceROI,0);
-    //cv::Mat faceRoiTaille;
-
-
-
-    //GLuint texture_webcamROI = generate_texture_webcam(faceROI);//generate_avatar_head_texture(frame);
-    // Draw the object with the webcam texture
-    //glBindTexture(GL_TEXTURE_2D,texture_webcam);  PRINT_OPENGL_ERROR();
-    //mesh_cube_opengl.draw();
-
+std::cout<<"before drawned avatar"<<std::endl;
     //Draw the avatar body
     glBindTexture(GL_TEXTURE_2D,texture_avatar_body); PRINT_OPENGL_ERROR();
     mesh_avatar_body_opengl.draw();
@@ -146,9 +142,24 @@ void scene::draw_scene()
         glBindTexture(GL_TEXTURE_2D,texture_webcamROI); PRINT_OPENGL_ERROR();
         mesh_avatar_head_opengl.draw();
     }
-    //glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
 
 
+    if(initHand == true)
+    {
+        std::cout<<"before start handtrack"<<std::endl;
+        startHandtrack(frame);
+    }
+
+    if(cpt != 0)
+    {
+        std::cout<<"before detect hand"<<std::endl;
+        hand1.Detect_Hand(capture);
+
+    }
+ move_hand();
+
+ glDeleteTextures(1, &texture_webcam);  PRINT_OPENGL_ERROR();
+ std::cout<<"end move hand"<<std::endl;
 }
 
 
@@ -163,7 +174,7 @@ void scene::saveYourFace(const bool valid)
     {
         if(nbVisage==0)
         {
-            cv::putText(frame,"Pas de visage à sauvegarcer",cv::Point(40,40),1,1,cv::Scalar(255,0,0));
+            cv::putText(frame,"Pas de visage à sauvegarder",cv::Point(40,40),1,1,cv::Scalar(255,0,0));
 
             if(texture_webcamROI != NULL)
                 glDeleteTextures(1,&texture_webcamROI);
@@ -178,6 +189,67 @@ void scene::saveYourFace(const bool valid)
         }
     }
 
+}
+
+void scene::startHandtrack(cv::Mat frame)
+{
+        hand1.Col_split_begin = 0;
+        hand1.Col_split_end = frame.rows;
+        //hand1.Col_split_end = 0;
+        hand1.setname_img("Hand 1");
+        hand1.setname_trackbar("Trackbars hand 1");
+        hand1.initHandTrack(capture);
+        hand1.init_Trackbars();
+        hand1.average(capture);
+        cpt = 1;
+        initHand = false;
+       // cv::destroyAllWindows();
+}
+
+void scene::move_hand()
+{
+    int width=0;
+    int height=0;
+    get_webcam_size(width,height);
+
+    if(cpt == 1){
+        PosInit.x = width/2;
+        PosInit.y = height/2;
+        cpt++;
+    }
+
+   // std::cout<<"PosInit"<<PosInit<<std::endl;
+
+    //On recupere le rectangle correspondant à la main :
+    cv::Point PosCourante;
+    HandGesture hg = hand1.gethg();
+   // std::cout<<"rectangle :"<<hg.bRect<<std::endl;
+   // std::cout<<"tl :"<<hg.bRect.tl()<<std::endl;
+    //PosCourante = hg.bRect.tl();
+
+    //Teste avec la tete :
+    if(hg.isHand == 1){
+        PosCourante.x = hg.bRect.tl().x + hg.bRect.width/2.0;
+        PosCourante.y = hg.bRect.tl().y + hg.bRect.height/2.0;
+    }
+   // std::cout<<"PosCourante"<<PosCourante<<std::endl;
+    delta.x = PosCourante.x - PosInit.x;
+    delta.y = PosCourante.y - PosInit.y;
+
+   std::cout<<"delta"<<delta<<std::endl;
+
+    for(int k = 0; k < mesh_hand.size_vertex(); k++)
+    {
+        //Déplacement du dinosaure dans l'espace
+        mesh_hand.vertex(k).y() = mesh_hand.vertex(k).y() - delta.y/200.0;
+        mesh_hand.vertex(k).x() = mesh_hand.vertex(k).x() - delta.x/200.0;
+    }
+
+    PosInit = PosCourante;
+
+    mesh_hand_opengl.fill_vbo(mesh_hand);
+    glBindTexture(GL_TEXTURE_2D,texture_default);  PRINT_OPENGL_ERROR();
+    mesh_hand_opengl.draw();
 }
 
 void scene::generate_avatar_head()
@@ -257,7 +329,7 @@ void scene::load_common_data()
 
 
 
-
+// Analyse pour faceTrack
 int scene::analyse_image(cv::Mat& frame)
 {
 
@@ -357,7 +429,7 @@ GLuint scene::generate_avatar_head_texture(const cv::Mat &im)
 
 
 scene::scene()
-    :shader_mesh(0),shader_cube(0),time_advance(0),capture(0),savef(false)
+    :shader_mesh(0),shader_cube(0),time_advance(0),capture(0),savef(false),initHand(false),cpt(0)
 {}
 
 
@@ -377,8 +449,19 @@ void scene::setSaveYourFace(bool valid)
     this->savef = valid;
 }
 
-bool& scene::getSaveYourFace()
+bool scene::getSaveYourFace() const
 {
     return this->savef;
 }
 
+void scene::setInitHand(bool valid)
+{
+    this->initHand = valid;
+    cpt= 0;
+}
+
+
+void scene::display_handtrack(bool valid)
+{
+   hand1.setDisplayImages(valid);
+}

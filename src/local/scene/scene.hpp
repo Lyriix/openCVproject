@@ -16,7 +16,7 @@
 #include "../../lib/opengl/mesh_opengl.hpp"
 #include "../../lib/interface/camera_matrices.hpp"
 #include "faceTrack.hpp"
-
+#include "handTrack/handTrack.hpp"
 
 #include <vector>
 #include <opencv2/opencv.hpp>
@@ -48,7 +48,21 @@ public:
     void setSaveYourFace(bool valid);
 
     /** Get Boolean face to save */
-    bool& getSaveYourFace();
+    bool getSaveYourFace() const;
+
+    /** Init Handtracking */
+    void startHandtrack(cv::Mat frame);
+
+    /** Set boolean for hand Initialisation */
+    void setInitHand(bool valid);
+
+
+    /** Display face TRACKING */
+    void display_facetrack(bool isValid);
+    /** Displa hand TRACKING */
+    void display_handtrack(bool isValid);
+
+
 
 
 private:
@@ -75,7 +89,14 @@ private:
     /** Generate avatar head */
     void generate_avatar_head();
 
+    /** Load an avatar */
     void load_avatar();
+
+    /** Init "color" detection for hand tracking */
+    void Init_detect_Hand(cv::Mat &frame);
+
+    /** Do move relative to hand moves */
+    void move_hand();
 
     /** Access to the parent object */
     myWidgetGL* pwidget;
@@ -111,6 +132,9 @@ private:
     cpe::mesh_opengl mesh_avatar_head_opengl;
     GLuint texture_avatar_head;
 
+    cpe::mesh mesh_hand;
+    cpe::mesh_opengl mesh_hand_opengl;
+
 
     /** OpenCV webcam capture interface */
     cv::VideoCapture capture;
@@ -125,6 +149,18 @@ private:
     cv::Mat faceROI;
     bool savef;
     int nbVisage;
+
+    /** Hand Track */
+    handTrack hand1;
+    handTrack hand2;
+
+    /** Deplacement de la main : simulation */
+    cv::Point PosInit;
+    cv::Point delta;
+
+    /** Init han track */
+    bool initHand;
+    int cpt;
 
 
 

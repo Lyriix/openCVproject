@@ -1,5 +1,6 @@
 #include "myWidgetGL.hpp"
 
+
 #include "GL/glew.h"
 #include "GL/gl.h"
 
@@ -272,4 +273,18 @@ void myWidgetGL::draw_axes()
 void myWidgetGL::sauvegardeImage(bool est_actif)
 {
     this->scene_3d.setSaveYourFace(true);
+}
+
+void myWidgetGL::start_Handtrack()
+{
+
+    this->scene_3d.setInitHand(true);
+    //updateGL();
+}
+
+void myWidgetGL::DisplayHandtrack(bool isValid)
+{
+    //this->scene_3d.display_facetrack(isValid);
+    this->scene_3d.display_handtrack(isValid);
+    //updateGL();
 }
