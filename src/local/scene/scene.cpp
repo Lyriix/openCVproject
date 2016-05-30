@@ -56,7 +56,7 @@ void scene::load_scene()
     // AVATAR                                  //
     //*****************************************//
     texture_avatar_body = load_texture_file("data/Megaman/texture.png");
-    mesh_avatar_body = load_mesh_file("data/Megaman/Megaman_body.obj");
+    mesh_avatar_body = load_mesh_file("data/Megaman/Megaman_body_3.obj");
 
     mesh_avatar_body.transform_apply_scale(0.2f,0.2f,0.2f);
     mesh_avatar_body_opengl.fill_vbo(mesh_avatar_body);
@@ -96,7 +96,8 @@ void scene::load_scene()
     // Hand                                     //
     //******************************************//
 
-    mesh_hand = load_mesh_file("data/stegosaurus.obj");
+    mesh_hand = load_mesh_file("data/hand.obj");
+    mesh_hand.transform_apply_scale(0.2f,0.2f,0.2f);
     mesh_hand.fill_empty_field_by_default();
     mesh_hand.fill_color(cpe::vec3(1.0,1.0,1.0));
 
